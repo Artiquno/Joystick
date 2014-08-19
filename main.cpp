@@ -116,7 +116,7 @@ int main()
             }
             else if(butPress(connected, joyButton::Circle))
             {
-                input("xdotool click 3", "xdotool mousedown 3", "", "", "", connected);
+                input("xdotool click 3", "xdotool key Tab", "", "", "", connected);
                 sleep(sf::milliseconds(INPUT_SLEEP));
             }
             else if(butPress(connected, joyButton::Cross))
@@ -143,12 +143,12 @@ int main()
             //Joystick presses
             else if(butPress(connected, joyButton::AnaLeft))
             {
-                input("banshee --toggle-playing", "", "", "", "", connected);
+                input("banshee --toggle-playing &", "", "", "", "", connected);
                 sleep(milliseconds(INPUT_SLEEP));
             }
             else if(butPress(connected, joyButton::AnaRight))
             {
-                input("banshee --stop", "", "", "", "", connected);
+                input("banshee --stop &", "", "", "", "", connected);
                 sleep(milliseconds(INPUT_SLEEP));
             }
 
@@ -210,12 +210,12 @@ int main()
             }
             else if(Joystick::getAxisPosition(connected, Joystick::Axis::U) > 0)
             {
-                input("banshee --next", "", "", "", "", connected);
+                input("banshee --next &", "", "", "", "", connected);
                 sleep(milliseconds(INPUT_SLEEP));
             }
             else if(Joystick::getAxisPosition(connected, Joystick::Axis::U) < 0)
             {
-                input("banshee --restart-or-previous", "", "", "", "", connected);
+                input("banshee --restart-or-previous &", "", "", "", "", connected);
                 sleep(milliseconds(INPUT_SLEEP));
             }
 
