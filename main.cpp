@@ -3,8 +3,10 @@
 #include <SFML/Window/Joystick.hpp>
 
 #define DIV 15
+#define DIV_SLOW 40
 #define SPEED 1
 #define INPUT_SLEEP 200
+#define MODIFIER_INPUT_SLEEP 400
 #define VOL "10"
 
 #define getPos Joystick::getAxisPosition
@@ -44,7 +46,8 @@ void input(char cmd[], char R1[], char R2[], char L1[], char L2[], unsigned shor
         }
         else
         {
-            system("xdotool mouseup 1 mouseup 2 mouseup 3 keyup Super");
+            system("xdotool mouseup 1 mouseup 2 mouseup 3 "
+                   "keyup Super ");
             holding = false;
         }
     }
@@ -82,20 +85,33 @@ int main()
     system("onboard");
     while(running)
     {
-        Thread updater(update);
-        updater.launch();
+        Joystick::update();
         sleep(milliseconds(1000/80));
+
+        //Unpause
+        if( butPress(connected, joyButton::R1) &&
+            butPress(connected, joyButton::Select))
+        {
+            paused = false;
+            cout << "Paused = false\n";
+            sleep(milliseconds(500));
+        }
+
         if(!paused)
         {
-            if(butPress(connected, joyButton::L1) &&
-               butPress(connected, joyButton::L2) &&
-               butPress(connected, joyButton::R2))
+            //Pausing
+            if(butPress(connected, joyButton::R1) &&
+               butPress(connected, joyButton::Start))
             {
-                running = false;
+                paused = true;
+                cout << "Paused = true\n";
+                sleep(milliseconds(500));
             }
+
+            //Normal buttons
             else if(butPress(connected, joyButton::Triangle))
             {
-                input("xdotool key BackSpace", "", "", "", "", connected);
+                input("xdotool key BackSpace","xdotool key space" , "", "", "", connected);
                 sleep(sf::milliseconds(INPUT_SLEEP));
             }
             else if(butPress(connected, joyButton::Circle))
@@ -115,33 +131,16 @@ int main()
             }
             else if(butPress(connected, joyButton::Select))
             {
-                input("xdotool key Super", "xdotool keydown Super", "", "", "", connected);
+                input("xdotool key Super", "", "", "", "", connected);
                 sleep(sf::milliseconds(INPUT_SLEEP));
             }
             else if(butPress(connected, joyButton::Start))
             {
-                input("xdotool key Return", "xdotool keydown Return", "", "", "", connected);
+                input("xdotool key Return", "", "", "", "", connected);
                 sleep(sf::milliseconds(INPUT_SLEEP));
             }
-            else if(butPress(connected, joyButton::L1) &&
-                    butPress(connected, joyButton::R1))
-            {
-                paused = true;
-                cout << "Paused = true\n";
-                sleep(milliseconds(500));
-            }
-            else if(butPress(connected, joyButton::R2) &&
-                    !butPress(connected, joyButton::L1))
-            {
-                input("banshee --next", "", "", "", "", connected);
-                sleep(milliseconds(INPUT_SLEEP));
-            }
-            else if(butPress(connected, joyButton::L2) &&
-                    !butPress(connected, joyButton::L1))
-            {
-                input("banshee --restart-or-previous", "", "", "", "", connected);
-                sleep(milliseconds(INPUT_SLEEP));
-            }
+
+            //Joystick presses
             else if(butPress(connected, joyButton::AnaLeft))
             {
                 input("banshee --toggle-playing", "", "", "", "", connected);
@@ -153,39 +152,96 @@ int main()
                 sleep(milliseconds(INPUT_SLEEP));
             }
 
+            //Modifier Keys
+            else if(butPress(connected, joyButton::L1))
+            {
+                if(!shift)
+                {
+                    system("xdotool keydown Shift");
+                    shift = true;
+                    sleep(milliseconds(MODIFIER_INPUT_SLEEP));
+                }
+                else
+                {
+                    system("xdotool keyup Shift");
+                    shift = false;
+                    sleep(milliseconds(MODIFIER_INPUT_SLEEP));
+                }
+            }
+            else if(butPress(connected, joyButton::L2))
+            {
+                if(!ctrl)
+                {
+                    system("xdotool keydown Ctrl");
+                    ctrl = true;
+                    sleep(milliseconds(MODIFIER_INPUT_SLEEP));
+                }
+                else
+                {
+                    system("xdotool keyup Ctrl");
+                    ctrl = false;
+                    sleep(milliseconds(MODIFIER_INPUT_SLEEP));
+                }
+            }
+            else if(butPress(connected, joyButton::R2))
+            {
+                if(!alt)
+                {
+                    system("xdotool keydown Alt");
+                    alt = true;
+                    sleep(milliseconds(MODIFIER_INPUT_SLEEP));
+                }
+                else
+                {
+                    system("xdotool keyup Alt");
+                    alt = false;
+                    sleep(milliseconds(MODIFIER_INPUT_SLEEP));
+                }
+            }
+
+            //Right analog
             if(Joystick::getAxisPosition(connected, Joystick::Axis::R) < 0)
             {
-                input("banshee --set-volume=+"VOL, "", "", "", "", connected);
+                input("banshee --set-volume=+" VOL, "", "", "", "", connected);
             }
             else if(Joystick::getAxisPosition(connected, Joystick::Axis::R) > 0)
             {
-                input("banshee --set-volume=-"VOL, "", "", "", "", connected);
+                input("banshee --set-volume=-" VOL, "", "", "", "", connected);
+            }
+            else if(Joystick::getAxisPosition(connected, Joystick::Axis::U) > 0)
+            {
+                input("banshee --next", "", "", "", "", connected);
+                sleep(milliseconds(INPUT_SLEEP));
+            }
+            else if(Joystick::getAxisPosition(connected, Joystick::Axis::U) < 0)
+            {
+                input("banshee --restart-or-previous", "", "", "", "", connected);
+                sleep(milliseconds(INPUT_SLEEP));
             }
 
-            if(Joystick::getAxisPosition(connected, Joystick::Axis::X) > 0)
+            //Left analog
+            if(Joystick::getAxisPosition(connected, Joystick::Axis::X) != 0)
             {
-                Mouse::setPosition(Mouse::getPosition() + Vector2i(getPos(connected, Joystick::Axis::X)/DIV * SPEED, 0));
-            }
-            else if(Joystick::getAxisPosition(connected, Joystick::Axis::X) < 0)
-            {
-                Mouse::setPosition(Mouse::getPosition() + Vector2i(getPos(connected, Joystick::Axis::X)/DIV * SPEED, 0));
+                if(!butPress(connected, joyButton::R1))
+                    Mouse::setPosition(Mouse::getPosition() + Vector2i(getPos(connected, Joystick::Axis::X)/DIV * SPEED, 0));
+                else
+                    Mouse::setPosition(Mouse::getPosition() + Vector2i(getPos(connected, Joystick::Axis::X)/DIV_SLOW * SPEED, 0));
             }
 
-            if(Joystick::getAxisPosition(connected, Joystick::Axis::Y) > 0)
+            if(Joystick::getAxisPosition(connected, Joystick::Axis::Y) != 0)
             {
-                Mouse::setPosition(Mouse::getPosition() + Vector2i(0, getPos(connected, Joystick::Axis::Y)/DIV * SPEED));
-            }
-            else if(Joystick::getAxisPosition(connected, Joystick::Axis::Y) < 0)
-            {
-                Mouse::setPosition(Mouse::getPosition() + Vector2i(0, getPos(connected, Joystick::Axis::Y)/DIV * SPEED));
+                if(!butPress(connected, joyButton::R1))
+                    Mouse::setPosition(Mouse::getPosition() + Vector2i(0, getPos(connected, Joystick::Axis::Y)/DIV * SPEED));
+                else
+                    Mouse::setPosition(Mouse::getPosition() + Vector2i(0, getPos(connected, Joystick::Axis::Y)/DIV_SLOW * SPEED));
             }
         }
-        if( butPress(connected, joyButton::R1) &&
-            butPress(connected, joyButton::R2))
+        //Close
+        if(butPress(connected, joyButton::Start) &&
+           butPress(connected, joyButton::Select) &&
+           butPress(connected, joyButton::R1))
         {
-            paused = false;
-            cout << "Paused = false\n";
-            sleep(milliseconds(500));
+            running = false;
         }
     }
     //cin.ignore();
