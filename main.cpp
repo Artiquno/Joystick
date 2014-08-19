@@ -233,7 +233,7 @@ int main()
                     Mouse::setPosition(Mouse::getPosition() + Vector2i(0, getPos(connected, Joystick::Axis::Y)/DIV_SLOW * SPEED));
             }
         }
-        //Close
+        //Closer
         if(butPress(connected, joyButton::Start) &&
            butPress(connected, joyButton::Select) &&
            butPress(connected, joyButton::R1))
