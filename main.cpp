@@ -5,13 +5,10 @@
 #define DIV 15
 #define SPEED 1
 #define INPUT_SLEEP 200
+#define VOL "10"
 
 #define getPos Joystick::getAxisPosition
 #define butPress Joystick::isButtonPressed
-
-//Note: L1 = Shift
-//      L2 = Ctrl
-//      R2 = Alt
 
 using namespace std;
 using namespace sf;
@@ -90,10 +87,13 @@ int main()
         sleep(milliseconds(1000/80));
         if(!paused)
         {
-//            if(butPress(connected, joyButton::Select))
-//                running = false;
-//            else
-            if(butPress(connected, joyButton::Triangle))
+            if(butPress(connected, joyButton::L1) &&
+               butPress(connected, joyButton::L2) &&
+               butPress(connected, joyButton::R2))
+            {
+                running = false;
+            }
+            else if(butPress(connected, joyButton::Triangle))
             {
                 input("xdotool key BackSpace", "", "", "", "", connected);
                 sleep(sf::milliseconds(INPUT_SLEEP));
@@ -121,6 +121,7 @@ int main()
             else if(butPress(connected, joyButton::Start))
             {
                 input("xdotool key Return", "xdotool keydown Return", "", "", "", connected);
+                sleep(sf::milliseconds(INPUT_SLEEP));
             }
             else if(butPress(connected, joyButton::L1) &&
                     butPress(connected, joyButton::R1))
@@ -128,6 +129,37 @@ int main()
                 paused = true;
                 cout << "Paused = true\n";
                 sleep(milliseconds(500));
+            }
+            else if(butPress(connected, joyButton::R2) &&
+                    !butPress(connected, joyButton::L1))
+            {
+                input("banshee --next", "", "", "", "", connected);
+                sleep(milliseconds(INPUT_SLEEP));
+            }
+            else if(butPress(connected, joyButton::L2) &&
+                    !butPress(connected, joyButton::L1))
+            {
+                input("banshee --restart-or-previous", "", "", "", "", connected);
+                sleep(milliseconds(INPUT_SLEEP));
+            }
+            else if(butPress(connected, joyButton::AnaLeft))
+            {
+                input("banshee --toggle-playing", "", "", "", "", connected);
+                sleep(milliseconds(INPUT_SLEEP));
+            }
+            else if(butPress(connected, joyButton::AnaRight))
+            {
+                input("banshee --stop", "", "", "", "", connected);
+                sleep(milliseconds(INPUT_SLEEP));
+            }
+
+            if(Joystick::getAxisPosition(connected, Joystick::Axis::R) < 0)
+            {
+                input("banshee --set-volume=+"VOL, "", "", "", "", connected);
+            }
+            else if(Joystick::getAxisPosition(connected, Joystick::Axis::R) > 0)
+            {
+                input("banshee --set-volume=-"VOL, "", "", "", "", connected);
             }
 
             if(Joystick::getAxisPosition(connected, Joystick::Axis::X) > 0)
