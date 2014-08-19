@@ -26,14 +26,8 @@ enum joyButton
     AnaLeft, AnaRight
 };
 
-void update();
 void input(char cmd[], char R1[], char R2[], char L1[], char L2[], unsigned short int joystickId = 0);
 char getJoystick(unsigned char connected);
-
-void update()
-{
-    Joystick::update();
-}
 
 void input(char cmd[], char R1[], char R2[], char L1[], char L2[], unsigned short int joystickId)
 {
@@ -82,7 +76,10 @@ int main()
         running = false;
         cout << "Failed to detect any joystick!\n";
     }
-    system("onboard");
+    if(running)
+    {
+        system("onboard");
+    }
     while(running)
     {
         Joystick::update();
