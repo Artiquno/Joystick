@@ -1,67 +1,16 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
 #include <SFML/Window/Joystick.hpp>
-#define __USE_GNU
-#include <sched.h>
+#include "uInputLib.h"
 
-#define DIV 20
-#define DIV_SLOW 40
 
-#define SPEED 1
-#define SPEED_FAST 3
-
-#define INPUT_SLEEP 200
-#define MODIFIER_INPUT_SLEEP 400
-
-#define VOL "5"
-
-#define getPos Joystick::getAxisPosition
-#define butPress Joystick::isButtonPressed
 
 using namespace std;
 using namespace sf;
 
-bool alt, shift, ctrl, holding = false;
 
-enum joyButton
-{
-    Triangle = 0, Circle, Cross, Square,
-    L1, R1,
-    L2, R2,
-    Select, Start,
-    AnaLeft, AnaRight
-};
 
-void input(char cmd[], char R1[], char L1[], char R2[], char L2[], unsigned short int joystickId = 0);
 char getJoystick(unsigned char connected);
-
-void input(char cmd[], char R1[], char L1[], char R2[], char L2[], unsigned short int joystickId)
-{
-    if(holding)
-    {
-        system("xdotool mouseup 1 mouseup 2 mouseup 3 "
-               "keyup Super ");
-        holding = false;
-    }
-    else
-    {
-        if(butPress(joystickId, joyButton::R1))
-        {
-            system(R1);
-            holding = true;
-        }
-        else if(butPress(joystickId, joyButton::L1))
-        {
-            system(L1);
-        }
-        //else if(butPress(joystickId, joyButton::L1));
-            //Do something
-        //else if(butPress(joystickId, joyButton::L2));
-            //Do something
-        else
-            system(cmd);
-    }
-}
 
 char getJoystick()
 {
@@ -75,12 +24,15 @@ char getJoystick()
 
 int main()
 {
-
-    int abc = sched_setaffinity(0, sizeof(cpu_set_t), 0);
+    if (setup_uinput_device() < 0)
+    {
+        printf("Unable to find uinput device\n");
+        return -1;
+    }
     bool running = true;
     bool paused = false;
     Joystick::update();
-    char connected = getJoystick();
+    connected = getJoystick();
     if(connected == -1)
     {
         running = false;
@@ -88,8 +40,8 @@ int main()
     }
     while(running)
     {
-        Joystick::update();
         sleep(milliseconds(1000/80));
+        Joystick::update();
 
         //Unpause
         if( butPress(connected, joyButton::L1) &&
@@ -114,60 +66,78 @@ int main()
             //Normal buttons
             if(butPress(connected, joyButton::Triangle))
             {
-                input("xdotool key BackSpace",
-                      "xdotool key space" ,
-                      "xdotool key KP_7",
-                      "", "", connected);
-                sleep(milliseconds(INPUT_SLEEP));
+                buttons(KEY_BACKSPACE, KEY_SPACE, KEY_KP7, numLock());
             }
             else if(butPress(connected, joyButton::Circle))
             {
-                input("xdotool click 3",
-                      "xdotool mousedown 3",
-                      "xdotool key KP_3",
-                      "", "", connected);
-                sleep(milliseconds(INPUT_SLEEP));
+                mouseButtons(BTN_RIGHT, KEY_KP3, KEY_NUMLOCK);
             }
             else if(butPress(connected, joyButton::Cross))
             {
-                input("xdotool click 1",
-                      "xdotool mousedown 1",
-                      "xdotool key KP_1",
-                      "", "", connected);
+                if(butPress(connected, joyButton::L1))
+                {
+                    keyPress(KEY_KP1);
+                }
+                else if(butPress(connected, joyButton::R1))
+                {
+                    keyDown(BTN_LEFT);
+                }
+                else
+                {
+                    keyPress(BTN_LEFT);
+                }
                 sleep(milliseconds(INPUT_SLEEP));
             }
             else if(butPress(connected, joyButton::Square))
             {
-                input("xdotool click 2",
-                      "xdotool mousedown 2",
-                      "xdotool key KP_5",
-                      "", "", connected);
+                if(butPress(connected, joyButton::L1))
+                {
+                    keyPress(KEY_KP5);
+                }
+                else if(butPress(connected, joyButton::R1))
+                {
+                    keyDown(BTN_MIDDLE);
+                }
+                else
+                {
+                    keyPress(BTN_MIDDLE);
+                }
                 sleep(milliseconds(INPUT_SLEEP));
             }
             else if(butPress(connected, joyButton::Select))
             {
-                input("xdotool key Super",
-                      "xdotool key Escape",
-                      "", "", "", connected);
+                if(butPress(connected, joyButton::R1))
+                {
+                    keyPress(KEY_ESC);
+                }
+                else
+                {
+                    keyPress(KEY_LEFTMETA);
+                }
                 sleep(milliseconds(INPUT_SLEEP));
             }
             else if(butPress(connected, joyButton::Start))
             {
-                input("xdotool key Return",
-                      "xdotool key Tab",
-                      "", "", "", connected);
+                if(butPress(connected, joyButton::R1))
+                {
+                    keyPress(KEY_TAB);
+                }
+                else
+                {
+                    keyPress(KEY_ENTER);
+                }
                 sleep(milliseconds(INPUT_SLEEP));
             }
 
             //Joystick presses
             else if(butPress(connected, joyButton::AnaLeft))
             {
-                input("banshee --toggle-playing &", "", "", "", "", connected);
+                system("banshee --toggle-playing &");
                 sleep(milliseconds(INPUT_SLEEP));
             }
             else if(butPress(connected, joyButton::AnaRight))
             {
-                input("banshee --stop &", "", "", "", "", connected);
+                system("banshee --stop &");
                 sleep(milliseconds(INPUT_SLEEP));
             }
 
@@ -178,16 +148,15 @@ int main()
                 {
                     if(!shift)
                     {
-                        system("xdotool keydown Shift");
+                        keyUp(KEY_LEFTSHIFT);
                         shift = true;
-                        sleep(milliseconds(MODIFIER_INPUT_SLEEP));
                     }
                     else
                     {
-                        system("xdotool keyup Shift");
+                        keyUp(KEY_LEFTSHIFT);
                         shift = false;
-                        sleep(milliseconds(MODIFIER_INPUT_SLEEP));
                     }
+                    sleep(milliseconds(MODIFIER_INPUT_SLEEP));
                 }
             }
             else if(butPress(connected, joyButton::L2))
@@ -196,16 +165,15 @@ int main()
                 {
                     if(!ctrl)
                     {
-                        system("xdotool keydown Ctrl");
+                        keyUp(KEY_LEFTCTRL);
                         ctrl = true;
-                        sleep(milliseconds(MODIFIER_INPUT_SLEEP));
                     }
                     else
                     {
-                        system("xdotool keyup Ctrl");
+                        keyUp(KEY_LEFTCTRL);
                         ctrl = false;
-                        sleep(milliseconds(MODIFIER_INPUT_SLEEP));
                     }
+                    sleep(milliseconds(MODIFIER_INPUT_SLEEP));
                 }
                 else
                 {
@@ -219,16 +187,15 @@ int main()
                 {
                     if(!alt)
                     {
-                        input("", "xdotool keydown Alt", "", "", "", connected);
+                        keyDown(KEY_LEFTALT);
                         alt = true;
-                        sleep(milliseconds(MODIFIER_INPUT_SLEEP));
                     }
                     else
                     {
-                        input("", "xdotool keyup Alt", "", "", "", connected);
+                        keyUp(KEY_LEFTALT);
                         alt = false;
-                        sleep(milliseconds(MODIFIER_INPUT_SLEEP));
                     }
+                    sleep(milliseconds(MODIFIER_INPUT_SLEEP));
                 }
                 else
                 {
@@ -258,12 +225,12 @@ int main()
                 {
                     if(axisPos < 0)
                     {
-                        system("xdotool key Up");
+                        keyPress(KEY_UP);
                         sleep(milliseconds(INPUT_SLEEP));
                     }
                     else if(axisPos > 0)
                     {
-                        system("xdotool key Down");
+                        keyPress(KEY_DOWN);
                         sleep(milliseconds(INPUT_SLEEP));
                     }
                 }
@@ -271,12 +238,12 @@ int main()
                 {
                     if(axisPos < 0)
                     {
-                        system("xdotool click 4");
+                        relative(REL_WHEEL, 1);
                         sleep(milliseconds(-(10/axisPos)*INPUT_SLEEP));
                     }
                     else
                     {
-                        system("xdotool click 5");
+                        relative(REL_WHEEL, -1);
                         sleep(milliseconds((10/axisPos)*INPUT_SLEEP));
                     }
                 }
@@ -302,12 +269,12 @@ int main()
                 {
                     if(axisPos > 0)
                     {
-                        system("xdotool key Right");
+                        keyPress(KEY_RIGHT);
                         sleep(milliseconds(INPUT_SLEEP));
                     }
                     else
                     {
-                        system("xdotool key Left");
+                        keyPress(KEY_LEFT);
                         sleep(milliseconds(INPUT_SLEEP));
                     }
                 }
@@ -315,12 +282,12 @@ int main()
                 {
                     if(axisPos > 0)
                     {
-                        system("amixer -c 0 set Master " VOL "%+ ");
+                        relative(REL_HWHEEL, axisPos/40);
                         sleep(milliseconds(INPUT_SLEEP));
                     }
                     else if(axisPos < 0)
                     {
-                        system("amixer -c 0 set Master " VOL "%- ");
+                        relative(REL_HWHEEL, axisPos/40);
                         sleep(milliseconds(INPUT_SLEEP));
                     }
                 }
@@ -329,22 +296,25 @@ int main()
             //Left analog
             if(Joystick::getAxisPosition(connected, Joystick::Axis::X) != 0)
             {
+                float axisPos = Joystick::getAxisPosition(connected, Joystick::Axis::X);
                 if(butPress(connected, joyButton::R1))
-                    Mouse::setPosition(Mouse::getPosition() + Vector2i(getPos(connected, Joystick::Axis::X)/DIV_SLOW * SPEED, 0));
+                    relative(REL_X, axisPos/DIV_SLOW * SPEED);
                 else if(butPress(connected, joyButton::L1))
-                    Mouse::setPosition(Mouse::getPosition() + Vector2i(getPos(connected, Joystick::Axis::X)/DIV * SPEED_FAST, 0));
+                    relative(REL_X, axisPos/DIV * SPEED_FAST);
                 else
-                    Mouse::setPosition(Mouse::getPosition() + Vector2i(getPos(connected, Joystick::Axis::X)/DIV * SPEED, 0));
+                    relative(REL_X, axisPos/DIV * SPEED);
             }
 
             if(Joystick::getAxisPosition(connected, Joystick::Axis::Y) != 0)
             {
+                float axisPos = Joystick::getAxisPosition(connected, Joystick::Axis::Y);
+
                 if(butPress(connected, joyButton::R1))
-                    Mouse::setPosition(Mouse::getPosition() + Vector2i(0, getPos(connected, Joystick::Axis::Y)/DIV_SLOW * SPEED));
+                    relative(REL_Y, axisPos/DIV_SLOW * SPEED);
                 else if(butPress(connected, joyButton::L1))
-                    Mouse::setPosition(Mouse::getPosition() + Vector2i(0, getPos(connected, Joystick::Axis::Y)/DIV * SPEED_FAST));
+                    relative(REL_Y, axisPos/DIV * SPEED_FAST);
                 else
-                    Mouse::setPosition(Mouse::getPosition() + Vector2i(0, getPos(connected, Joystick::Axis::Y)/DIV * SPEED));
+                    relative(REL_Y, axisPos/DIV * SPEED);
             }
         }
         //Closer
@@ -359,6 +329,8 @@ int main()
     cout << "Goodbye!\n";
     return 0;
 }
+
+
 
 
 
