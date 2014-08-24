@@ -43,8 +43,8 @@ int main()
         sleep(milliseconds(1000/80));
         Joystick::update();
 
-        //Unpause
-        if( butPress(connected, joyButton::L1) &&
+        //Pause/Unpause
+        if( butPress(connected, joyButton::R2) &&
             butPress(connected, joyButton::Select))
         {
             if(paused)
@@ -66,234 +66,99 @@ int main()
             //Normal buttons
             if(butPress(connected, joyButton::Triangle))
             {
-                buttons(KEY_BACKSPACE, KEY_SPACE, KEY_KP7, numLock());
+                buttons(KEY_BACKSPACE, KEY_SPACE, KEY_KP7, KEY_NUMLOCK, KEY_DELETE);
             }
             else if(butPress(connected, joyButton::Circle))
             {
-                mouseButtons(BTN_RIGHT, KEY_KP3, KEY_NUMLOCK);
+                mouseButtons(BTN_RIGHT, KEY_KP3, modifierEvent(shift, KEY_LEFTSHIFT));
             }
             else if(butPress(connected, joyButton::Cross))
             {
-                if(butPress(connected, joyButton::L1))
-                {
-                    keyPress(KEY_KP1);
-                }
-                else if(butPress(connected, joyButton::R1))
-                {
-                    keyDown(BTN_LEFT);
-                }
-                else
-                {
-                    keyPress(BTN_LEFT);
-                }
-                sleep(milliseconds(INPUT_SLEEP));
+                mouseButtons(BTN_LEFT, KEY_KP1, modifierEvent(ctrl, KEY_LEFTCTRL));
             }
             else if(butPress(connected, joyButton::Square))
             {
-                if(butPress(connected, joyButton::L1))
-                {
-                    keyPress(KEY_KP5);
-                }
-                else if(butPress(connected, joyButton::R1))
-                {
-                    keyDown(BTN_MIDDLE);
-                }
-                else
-                {
-                    keyPress(BTN_MIDDLE);
-                }
-                sleep(milliseconds(INPUT_SLEEP));
+                mouseButtons(BTN_MIDDLE, KEY_KP5, modifierEvent(alt, KEY_LEFTALT));
             }
             else if(butPress(connected, joyButton::Select))
             {
-                if(butPress(connected, joyButton::R1))
-                {
-                    keyPress(KEY_ESC);
-                }
-                else
-                {
-                    keyPress(KEY_LEFTMETA);
-                }
-                sleep(milliseconds(INPUT_SLEEP));
+                buttons(KEY_LEFTMETA, KEY_ESC, KEY_WLAN);
             }
             else if(butPress(connected, joyButton::Start))
             {
-                if(butPress(connected, joyButton::R1))
-                {
-                    keyPress(KEY_TAB);
-                }
-                else
-                {
-                    keyPress(KEY_ENTER);
-                }
-                sleep(milliseconds(INPUT_SLEEP));
+                buttons(KEY_ENTER, KEY_TAB, KEY_SYSRQ);
             }
 
+            //KEY_BASSBOOST is assigned for opening onboard (on-screen keybard)
             //Joystick presses
             else if(butPress(connected, joyButton::AnaLeft))
             {
-                system("banshee --toggle-playing &");
-                sleep(milliseconds(INPUT_SLEEP));
+                buttons(KEY_PLAYPAUSE, KEY_BASSBOOST, KEY_PREVIOUSSONG);
             }
             else if(butPress(connected, joyButton::AnaRight))
             {
-                system("banshee --stop &");
-                sleep(milliseconds(INPUT_SLEEP));
+                buttons(KEY_STOPCD, KEY_MUTE, KEY_NEXTSONG);
             }
 
-            //Modifier Keys
-            else if(butPress(connected, joyButton::L1))
-            {
-                if(butPress(connected, joyButton::R1))
-                {
-                    if(!shift)
-                    {
-                        keyUp(KEY_LEFTSHIFT);
-                        shift = true;
-                    }
-                    else
-                    {
-                        keyUp(KEY_LEFTSHIFT);
-                        shift = false;
-                    }
-                    sleep(milliseconds(MODIFIER_INPUT_SLEEP));
-                }
-            }
-            else if(butPress(connected, joyButton::L2))
-            {
-                if(butPress(connected, joyButton::R1))
-                {
-                    if(!ctrl)
-                    {
-                        keyUp(KEY_LEFTCTRL);
-                        ctrl = true;
-                    }
-                    else
-                    {
-                        keyUp(KEY_LEFTCTRL);
-                        ctrl = false;
-                    }
-                    sleep(milliseconds(MODIFIER_INPUT_SLEEP));
-                }
-                else
-                {
-                    system("onboard &");
-                    sleep(milliseconds(INPUT_SLEEP));
-                }
-            }
-            else if(butPress(connected, joyButton::R2))
-            {
-                if(butPress(connected, joyButton::R1))
-                {
-                    if(!alt)
-                    {
-                        keyDown(KEY_LEFTALT);
-                        alt = true;
-                    }
-                    else
-                    {
-                        keyUp(KEY_LEFTALT);
-                        alt = false;
-                    }
-                    sleep(milliseconds(MODIFIER_INPUT_SLEEP));
-                }
-                else
-                {
-                    system("killall onboard");
-                    sleep(milliseconds(INPUT_SLEEP));
-                }
-            }
-
-            //Right analog
+            //Right Y Axis
             if(Joystick::getAxisPosition(connected, Joystick::Axis::R) != 0)
             {
-                float axisPos = Joystick::getAxisPosition(connected, Joystick::Axis::R);
-                if(butPress(connected, joyButton::R1))  //R1 is pressed
-                {
-                    if(axisPos < 0)
-                    {
-                        system("banshee --set-volume=+" VOL " &");
-                        sleep(milliseconds(INPUT_SLEEP));
-                    }
-                    else if(axisPos > 0)
-                    {
-                        system("banshee --set-volume=-" VOL " &");
-                        sleep(milliseconds(INPUT_SLEEP));
-                    }
-                }
-                else if(butPress(connected, joyButton::L1)) //L1 is pressed
-                {
-                    if(axisPos < 0)
-                    {
-                        keyPress(KEY_UP);
-                        sleep(milliseconds(INPUT_SLEEP));
-                    }
-                    else if(axisPos > 0)
-                    {
-                        keyPress(KEY_DOWN);
-                        sleep(milliseconds(INPUT_SLEEP));
-                    }
-                }
+                float axisPos = -Joystick::getAxisPosition(connected, Joystick::Axis::R);
+                if(axisEvent(axisPos, 0, 0, 0,
+                             axisL2(KEY_UP, KEY_DOWN, axisPos),
+                             axisR2(KEY_VOLUMEUP, KEY_VOLUMEDOWN, axisPos)));
                 else    //No modifier is pressed
                 {
-                    if(axisPos < 0)
+                    float temp = (axisPos > 0 ? axisPos : -axisPos);
+                    axisPos = (axisPos > 0 ? 1 : -1);
+                    if(butPress(connected, joyButton::R1))
                     {
-                        relative(REL_WHEEL, 1);
-                        sleep(milliseconds(-(10/axisPos)*INPUT_SLEEP));
+                        relative(REL_WHEEL, axisPos);
+                        sleep(milliseconds(WHEEL_DIV_SLOW/temp));
+                    }
+                    else if(butPress(connected, joyButton::L1))
+                    {
+                        relative(REL_WHEEL, axisPos);
+                        sleep(milliseconds(WHEEL_DIV/temp / WHEEL_FAST));
                     }
                     else
                     {
-                        relative(REL_WHEEL, -1);
-                        sleep(milliseconds((10/axisPos)*INPUT_SLEEP));
+                        relative(REL_WHEEL, axisPos);
+                        sleep(milliseconds(WHEEL_DIV/temp));
                     }
                 }
-            }   //End Axis::R
+            }
 
+            //Right X Axis
             else if(Joystick::getAxisPosition(connected, Joystick::Axis::U) != 0)
             {
                 float axisPos = Joystick::getAxisPosition(connected, Joystick::Axis::U);
-                if(butPress(connected, joyButton::R1))
+                if(axisEvent(axisPos, 0, 0, 0,
+                             axisL2(KEY_RIGHT, KEY_LEFT, axisPos),
+                             axisR2(KEY_FASTFORWARD, KEY_REWIND, axisPos)));
+                else    //No modifier is pressed
                 {
-                    if(axisPos > 0)
+                    float temp = (axisPos > 0 ? axisPos : -axisPos);
+                    axisPos = (axisPos > 0 ? 1 : -1);
+                    if(butPress(connected, joyButton::R1))
                     {
-                        system("banshee --next &");
-                        sleep(milliseconds(INPUT_SLEEP));
+                        relative(REL_HWHEEL, axisPos);
+                        sleep(milliseconds(WHEEL_DIV_SLOW/temp));
+                    }
+                    else if(butPress(connected, joyButton::L1))
+                    {
+                        relative(REL_HWHEEL, axisPos);
+                        sleep(milliseconds(WHEEL_DIV/temp / WHEEL_FAST));
                     }
                     else
                     {
-                        system("banshee --restart-or-previous &");
-                        sleep(milliseconds(INPUT_SLEEP));
-                    }
-                }
-                else if(butPress(connected, joyButton::L1))
-                {
-                    if(axisPos > 0)
-                    {
-                        keyPress(KEY_RIGHT);
-                        sleep(milliseconds(INPUT_SLEEP));
-                    }
-                    else
-                    {
-                        keyPress(KEY_LEFT);
-                        sleep(milliseconds(INPUT_SLEEP));
-                    }
-                }
-                else
-                {
-                    if(axisPos > 0)
-                    {
-                        relative(REL_HWHEEL, axisPos/40);
-                        sleep(milliseconds(INPUT_SLEEP));
-                    }
-                    else if(axisPos < 0)
-                    {
-                        relative(REL_HWHEEL, axisPos/40);
-                        sleep(milliseconds(INPUT_SLEEP));
+                        relative(REL_HWHEEL, axisPos);
+                        sleep(milliseconds(WHEEL_DIV/temp));
                     }
                 }
             }
 
-            //Left analog
+            //Left X Axis
             if(Joystick::getAxisPosition(connected, Joystick::Axis::X) != 0)
             {
                 float axisPos = Joystick::getAxisPosition(connected, Joystick::Axis::X);
@@ -305,6 +170,7 @@ int main()
                     relative(REL_X, axisPos/DIV * SPEED);
             }
 
+            //Left Y Axis
             if(Joystick::getAxisPosition(connected, Joystick::Axis::Y) != 0)
             {
                 float axisPos = Joystick::getAxisPosition(connected, Joystick::Axis::Y);
@@ -320,7 +186,7 @@ int main()
         //Closer
         if(butPress(connected, joyButton::Start) &&
            butPress(connected, joyButton::Select) &&
-           butPress(connected, joyButton::L1))
+           butPress(connected, joyButton::R2))
         {
             running = false;
         }
