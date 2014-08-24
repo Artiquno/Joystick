@@ -1,14 +1,15 @@
 #include <iostream>
-#include <SFML/Graphics.hpp>
+#include <SFML/System/Sleep.hpp>
 #include <SFML/Window/Joystick.hpp>
-#include "uInputLib.h"
 
-
+#ifdef __unix__
+    #include "uInputLib.h"
+#elif defined _WIN32
+    #include "winInputLib.h"
+#endif // defined
 
 using namespace std;
 using namespace sf;
-
-
 
 char getJoystick(unsigned char connected);
 
@@ -24,11 +25,13 @@ char getJoystick()
 
 int main()
 {
+    #ifdef __unix__
     if (setup_uinput_device() < 0)
     {
         printf("Unable to find uinput device\n");
         return -1;
     }
+    #endif
     bool running = true;
     bool paused = false;
     Joystick::update();

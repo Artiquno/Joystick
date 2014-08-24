@@ -20,9 +20,6 @@ using namespace sf;
 #define INPUT_SLEEP 200
 #define MODIFIER_INPUT_SLEEP 400
 
-#define VOL "5"
-
-#define getPos Joystick::getAxisPosition
 #define butPress Joystick::isButtonPressed
 
 static char connected;
@@ -62,7 +59,7 @@ enum joyButton
     AnaLeft, AnaRight
 };
 
-/* Globals */
+//Unix only
 static int uinp_fd = -1;
 struct uinput_user_dev uinp;
 
@@ -119,6 +116,9 @@ int setup_uinput_device()
     return 1;
 }
 
+//-------------------------------------------
+//  Change for _WIN32
+//-------------------------------------------
 void keyDown(int key)
 {
     event.type = EV_KEY;
@@ -132,6 +132,9 @@ void keyDown(int key)
     write(uinp_fd, &event, sizeof(event));
 }
 
+//-------------------------------------------
+//  Change for _WIN32
+//-------------------------------------------
 void keyUp(int key)
 {
     event.type = EV_KEY;
@@ -151,6 +154,9 @@ void keyPress(int key)
     keyUp(key);
 }
 
+//-------------------------------------------
+//  Change for _WIN32
+//-------------------------------------------
 void relative(int code, int val)
 {
     event.type = EV_REL;
